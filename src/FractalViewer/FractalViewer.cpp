@@ -10,6 +10,7 @@ const int MODE_PAN = 1;
 int mode = MODE_ZOOM;
 
 bool selecting = false;
+bool dragging = false;
 bool reupdate = true;
 
 int startPoint[2] = {0};
@@ -53,19 +54,20 @@ float mapFloat(float value, float startIn, float stopIn, float startOut, float e
     return (value - startIn) * (endOut - startOut) / (stopIn - startIn) + startOut;
 }
 
-void setDomain(Fractal &fractal, sf::Vector2f end) {
-    sf::Vector2f startReal;
-    sf::Vector2f endReal;
+sf::Vector2f toFractalCoord(sf::Vector2f displayCoord, Domain &currentDomain) {
+    sf::Vector2f fractalCoord;
+    fractalCoord.x = mapFloat(displayCoord.x, 0, width, currentDomain.minX, currentDomain.maxX);
+    fractalCoord.y = mapFloat(displayCoord.y, 0, height, currentDomain.minY, currentDomain.maxY);
+    return fractalCoord;
+}
 
+void setDomain(Fractal &fractal, sf::Vector2f end) {
     Domain oldDomain = fractal.getDomain();
 
-    startReal.x = mapFloat((float)startPoint[0], 0, width, oldDomain.minX, oldDomain.maxX);
-    startReal.y = mapFloat((float)startPoint[1], 0, height, oldDomain.minY, oldDomain.maxY);
+    sf::Vector2f pt1 = toFractalCoord(sf::Vector2f(startPoint[0], startPoint[1]), oldDomain);
+    sf::Vector2f pt2 = toFractalCoord(end, oldDomain);
 
-    endReal.x = mapFloat(end.x, 0, width, oldDomain.minX, oldDomain.maxX);
-    endReal.y = mapFloat(end.y, 0, height, oldDomain.minY, oldDomain.maxY);
-
-    fractal.setDomain(startReal.x, endReal.x, startReal.y, endReal.y);
+    fractal.setDomain(pt1.x, pt2.x, pt1.y, pt2.y);
 }
 
 void zoomDomain(Fractal &fractal, float zoom) {
@@ -146,7 +148,10 @@ int main() {
                     startPoint[1] = event.mouseButton.y;
                     if(mode == MODE_ZOOM)
                         selecting = true;
+                    else if (mode == MODE_PAN)
+                        dragging = true;
                 }
+
             } else if (event.type == sf::Event::MouseButtonReleased) {
                 if(event.mouseButton.button == sf::Mouse::Left) {
                     if(selecting) {
@@ -156,6 +161,13 @@ int main() {
                             setDomain(fractal, sf::Vector2f(startPoint[0], startPoint[1]) + zoomVector);
                             reupdate = true;
                         }
+                    }
+                    if(dragging) {
+                        dragging = false;
+                        Domain oldDomain = fractal.getDomain();
+                        sf::Vector2f displacement = toFractalCoord(sf::Vector2f(startPoint[0], startPoint[1]), oldDomain) - toFractalCoord(sf::Vector2f(sf::Mouse::getPosition(window)), oldDomain);
+                        fractal.setDomain(Domain(oldDomain.minX + displacement.x, oldDomain.maxX + displacement.x, oldDomain.minY + displacement.y, oldDomain.maxY + displacement.y));
+                        reupdate = true;
                     }
                 }
             }
@@ -174,6 +186,7 @@ int main() {
             convertFractalData(fractal, result);
             fractalResult.update(result);
             fractalSurface.setTexture(fractalResult);
+            fractalSurface.setPosition(0.0f, 0.0f);
         }
 
 
@@ -187,6 +200,9 @@ int main() {
             selectionBox.setSize(constrainToRatio(tempVec));
             selectionBox.setPosition((float)startPoint[0], (float)startPoint[1]);
             window.draw(selectionBox);
+        }
+        if(dragging) {
+            fractalSurface.setPosition(sf::Vector2f(sf::Mouse::getPosition(window)) - sf::Vector2f(startPoint[0], startPoint[1]));
         }
 
         window.display();
