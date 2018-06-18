@@ -16,7 +16,8 @@ set(FGLIB_DIR ${PROJECT_SOURCE_DIR}/src/FractalGenerator)
 
 set(FGLIB_FILES ${FGLIB_DIR}/FractalGenerator.cpp
         ${FGLIB_DIR}/Fractal.cpp
-        ${FGLIB_DIR}/Fractals/MandelbrotFractal.cpp src/FractalGenerator/Fractals/FractalTypes.cpp)
+        ${FGLIB_DIR}/Fractals/MandelbrotFractal.cpp
+        ${FGLIB_DIR}/Fractals/FractalTypes.cpp)
 
 add_library(fractalgenerator STATIC ${FGLIB_FILES})
 #Static lib end
