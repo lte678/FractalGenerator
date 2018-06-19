@@ -5,43 +5,56 @@
 #include "Fractal.h"
 
 
-Fractal::Fractal() {
+template <class PreciseFloat>
+Fractal<PreciseFloat>::Fractal() {
     m_fractal = new unsigned int[m_height * m_width];
-    m_domain = Domain();
+    m_domain = Domain<PreciseFloat>();
 }
 
-Fractal::Fractal(unsigned short width, unsigned short height) {
+template <class PreciseFloat>
+Fractal<PreciseFloat>::Fractal(unsigned short width, unsigned short height) {
     m_width = width;
     m_height = height;
     m_fractal = new unsigned int[m_height * m_width];
-    m_domain = Domain();
+    m_domain = Domain<PreciseFloat>();
 }
 
-void Fractal::setElement(unsigned int elementValue, unsigned short x, unsigned short y) {
+template <class PreciseFloat>
+void Fractal<PreciseFloat>::setElement(unsigned int elementValue, unsigned short x, unsigned short y) {
     if(x < m_width && y < m_height) {
         m_fractal[x + y * m_width] = elementValue;
     }
 }
 
-float Fractal::getDomainWidth() {
+template <class PreciseFloat>
+PreciseFloat Fractal<PreciseFloat>::getDomainWidth() {
     return m_domain.maxX - m_domain.minX;
 }
 
-float Fractal::getDomainHeight() {
+template <class PreciseFloat>
+PreciseFloat Fractal<PreciseFloat>::getDomainHeight() {
     return m_domain.maxY - m_domain.minY;
 }
 
-Domain Fractal::getDomain() {
+template <class PreciseFloat>
+Domain<PreciseFloat> Fractal<PreciseFloat>::getDomain() {
     return m_domain;
 }
 
-void Fractal::setDomain(Domain newDomain) {
+template <class PreciseFloat>
+void Fractal<PreciseFloat>::setDomain(Domain<PreciseFloat> newDomain) {
     m_domain = newDomain;
 }
 
-void Fractal::setDomain(float minX, float maxX, float minY, float maxY) {
+template<class PreciseFloat>
+void Fractal<PreciseFloat>::setDomain(PreciseFloat minX, PreciseFloat maxX, PreciseFloat minY, PreciseFloat maxY) {
     m_domain.minX = minX;
     m_domain.maxX = maxX;
     m_domain.minY = minY;
     m_domain.maxY = maxY;
 }
+
+
+template class Fractal<float>;
+template class Fractal<double>;
+template class Fractal<long double>;

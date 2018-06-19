@@ -3,13 +3,14 @@
 
 #include "FractalType.h"
 
-class MandelbrotFractal : public FractalType {
+template <class PreciseFloat>
+class MandelbrotFractal : public FractalType<PreciseFloat> {
 private:
     long m_previousExecTime = 0;
 public:
-    MandelbrotFractal() {};
+    //MandelbrotFractal() : FractalType<PreciseFloat>() {};
 
-    void calculate(Fractal &fractal, int numCores, bool cudaEnabled);
+    void calculate(Fractal<PreciseFloat> &fractal, int numCores, bool cudaEnabled);
 
     long getLastExecutionTime() { return m_previousExecTime; }
 };

@@ -6,7 +6,8 @@
 #include <iostream>
 #include <chrono>
 
-void MandelbrotFractal::calculate(Fractal &fractal, int numCores, bool cudaEnabled) {
+template <class PreciseFloat>
+void MandelbrotFractal<PreciseFloat>::calculate(Fractal<PreciseFloat> &fractal, int numCores, bool cudaEnabled) {
     std::cout << "Calculating mandelbrot fractal" << std::endl;
 
     if(cudaEnabled) {
@@ -26,21 +27,21 @@ void MandelbrotFractal::calculate(Fractal &fractal, int numCores, bool cudaEnabl
 
     auto startTime = std::chrono::high_resolution_clock::now();
 
-    float rx, ry, wx, wy; //Real x/y and width x/y
-    float tmprx;
-    float xOffset, yOffset;
-    Domain domain = fractal.getDomain();
+    PreciseFloat rx, ry, wx, wy; //Real x/y and width x/y
+    PreciseFloat tmprx;
+    PreciseFloat xOffset, yOffset;
+    Domain<PreciseFloat> domain = fractal.getDomain();
     xOffset = domain.minX;
     yOffset = domain.minY;
-    float origX, origY;
+    PreciseFloat origX, origY;
 
     unsigned int iterations;
     wx = fractal.getDomainWidth() / fractal.getWidth();
     wy = fractal.getDomainHeight() / fractal.getHeight();
     for(unsigned short y = 0; y < fractal.getHeight(); y++) {
         for(unsigned short x = 0; x < fractal.getWidth(); x++) {
-            rx = (float)x * wx + 0.5f * wx + xOffset;
-            ry = (float)y * wy + 0.5f * wy + yOffset;
+            rx = (PreciseFloat)x * wx + 0.5f * wx + xOffset;
+            ry = (PreciseFloat)y * wy + 0.5f * wy + yOffset;
             origX = rx;
             origY = ry;
             //std::cout << rx << ", " << ry << std::endl;
@@ -61,3 +62,7 @@ void MandelbrotFractal::calculate(Fractal &fractal, int numCores, bool cudaEnabl
     auto stopTime = std::chrono::high_resolution_clock::now();
     m_previousExecTime = std::chrono::duration_cast<std::chrono::microseconds>(stopTime-startTime).count();
 }
+
+template class MandelbrotFractal<float>;
+template class MandelbrotFractal<double>;
+template class MandelbrotFractal<long double>;

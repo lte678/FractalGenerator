@@ -5,8 +5,8 @@
 #include <sstream>
 #include <math.h>
 
-const int MODE_ZOOM = 0;
-const int MODE_PAN = 1;
+constexpr int MODE_ZOOM = 0;
+constexpr int MODE_PAN = 1;
 int mode = MODE_ZOOM;
 
 bool selecting = false;
@@ -21,15 +21,53 @@ const int width = (int)(height * 1.5f);
 const float zoomFactor = 0.8f;
 const float minZoomSelection = (float)height / 20.0f;
 
-void convertFractalData(Fractal &fractalData, uint8_t *result) {
-    for(int i = 0; i < fractalData.getHeight() * fractalData.getWidth(); i++) {
-        uint8_t value = 255 - (uint8_t)fractalData.getFractal()[i] * (255.0f / (float)fractalData.getMaxIterations());
-        result[i*4 + 0] = value;
-        result[i*4 + 1] = value;
-        result[i*4 + 2] = value;
-        result[i*4 + 3] = 255;
+typedef double fractalType;
+
+template <class PreciseFloat>
+class FractalHelper {
+public:
+    static void convertFractalData(Fractal<PreciseFloat> &fractalData, uint8_t *result) {
+        for(int i = 0; i < fractalData.getHeight() * fractalData.getWidth(); i++) {
+            uint8_t value = (uint8_t)(255-((float)fractalData.getFractal()[i] * (255.0f / (float)fractalData.getMaxIterations())));
+            result[i*4 + 0] = value;
+            result[i*4 + 1] = value;
+            result[i*4 + 2] = value;
+            result[i*4 + 3] = 255;
+        }
     }
-}
+
+    static PreciseFloat mapFloat(PreciseFloat value, PreciseFloat startIn, PreciseFloat stopIn, PreciseFloat startOut, PreciseFloat endOut) {
+        return (value - startIn) * (endOut - startOut) / (stopIn - startIn) + startOut;
+    }
+
+    static sf::Vector2<PreciseFloat> toFractalCoord(sf::Vector2f displayCoord, Domain<PreciseFloat> &currentDomain) {
+        sf::Vector2<PreciseFloat> fractalCoord;
+        fractalCoord.x = mapFloat(displayCoord.x, 0, width, currentDomain.minX, currentDomain.maxX);
+        fractalCoord.y = mapFloat(displayCoord.y, 0, height, currentDomain.minY, currentDomain.maxY);
+        return fractalCoord;
+    }
+
+    static void setDomain(Fractal<PreciseFloat> &fractal, sf::Vector2f end) {
+        Domain<PreciseFloat> oldDomain = fractal.getDomain();
+
+        sf::Vector2<PreciseFloat> pt1 = toFractalCoord(sf::Vector2f(startPoint[0], startPoint[1]), oldDomain);
+        sf::Vector2<PreciseFloat> pt2 = toFractalCoord(end, oldDomain);
+
+        fractal.setDomain(pt1.x, pt2.x, pt1.y, pt2.y);
+    }
+
+    static void zoomDomain(Fractal<PreciseFloat> &fractal, float zoom) {
+        PreciseFloat oldWidth = fractal.getDomainWidth();
+        PreciseFloat oldHeight = fractal.getDomainHeight();
+
+        PreciseFloat widthZoom = (oldWidth * zoom - oldWidth) / 2.0f;
+        PreciseFloat heightZoom = (oldHeight * zoom - oldHeight) / 2.0f;
+
+        Domain<PreciseFloat> oldDomain = fractal.getDomain();
+        fractal.setDomain(Domain<PreciseFloat>(oldDomain.minX - widthZoom, oldDomain.maxX + widthZoom, oldDomain.minY - heightZoom, oldDomain.maxY + heightZoom));
+    }
+};
+
 
 void setModeInd(sf::Text &ind) {
     switch(mode) {
@@ -49,39 +87,8 @@ sf::Vector2f constrainToRatio(sf::Vector2f vector) {
     return sf::Vector2f(size, size * ((float)height / (float)width));
 }
 
-
-float mapFloat(float value, float startIn, float stopIn, float startOut, float endOut) {
-    return (value - startIn) * (endOut - startOut) / (stopIn - startIn) + startOut;
-}
-
-sf::Vector2f toFractalCoord(sf::Vector2f displayCoord, Domain &currentDomain) {
-    sf::Vector2f fractalCoord;
-    fractalCoord.x = mapFloat(displayCoord.x, 0, width, currentDomain.minX, currentDomain.maxX);
-    fractalCoord.y = mapFloat(displayCoord.y, 0, height, currentDomain.minY, currentDomain.maxY);
-    return fractalCoord;
-}
-
-void setDomain(Fractal &fractal, sf::Vector2f end) {
-    Domain oldDomain = fractal.getDomain();
-
-    sf::Vector2f pt1 = toFractalCoord(sf::Vector2f(startPoint[0], startPoint[1]), oldDomain);
-    sf::Vector2f pt2 = toFractalCoord(end, oldDomain);
-
-    fractal.setDomain(pt1.x, pt2.x, pt1.y, pt2.y);
-}
-
-void zoomDomain(Fractal &fractal, float zoom) {
-    float oldWidth = fractal.getDomainWidth();
-    float oldHeight = fractal.getDomainHeight();
-
-    float widthZoom = (oldWidth * zoom - oldWidth) / 2.0f;
-    float heightZoom = (oldHeight * zoom - oldHeight) / 2.0f;
-
-    Domain oldDomain = fractal.getDomain();
-    fractal.setDomain(Domain(oldDomain.minX - widthZoom, oldDomain.maxX + widthZoom, oldDomain.minY - heightZoom, oldDomain.maxY + heightZoom));
-}
-
 int main() {
+
     sf::RenderWindow window(sf::VideoMode(width, height), "Mandelbrot Demo");
     sf::Texture fractalResult;
     sf::Sprite fractalSurface;
@@ -90,16 +97,12 @@ int main() {
         return EXIT_FAILURE;
     }
 
-    FractalGenerator fractalGen = FractalGenerator();
-    Fractal fractal = Fractal(width, height);
+    FractalGenerator<fractalType> fractalGen;
+    Fractal<fractalType> fractal = Fractal<fractalType>(width, height);
     fractal.setDomain(-2.0f, 2.0f, -2.0f * ((float)height / (float)width), 2.0f * ((float)height / (float)width));
-
-    fractalGen.computeFractal(fractal);
 
     uint8_t *result;
     result = new uint8_t[width * height * 4];
-    convertFractalData(fractal, result);
-    fractalResult.update(result);
     fractalSurface.setTexture(fractalResult);
 
     sf::Font font;
@@ -136,10 +139,12 @@ int main() {
                     mode = MODE_PAN;
                     setModeInd(modeInd);
                 } else if (event.key.code == sf::Keyboard::Equal) {
-                    zoomDomain(fractal, zoomFactor);
+                    FractalHelper<fractalType>::zoomDomain(fractal, zoomFactor);
                     reupdate = true;
                 } else if (event.key.code == sf::Keyboard::Dash) {
-                    zoomDomain(fractal, 1.0f / zoomFactor);
+                    FractalHelper<fractalType>::zoomDomain(fractal, 1.0f / zoomFactor);
+                    reupdate = true;
+                } else if (event.key.code == sf::Keyboard::R) {
                     reupdate = true;
                 }
             } else if (event.type == sf::Event::MouseButtonPressed) {
@@ -158,15 +163,15 @@ int main() {
                         selecting = false;
                         sf::Vector2f zoomVector = constrainToRatio(sf::Vector2f(sf::Mouse::getPosition(window) - sf::Vector2i(startPoint[0], startPoint[1])));
                         if(zoomVector.x*zoomVector.x + zoomVector.y*zoomVector.y >= minZoomSelection*minZoomSelection) {
-                            setDomain(fractal, sf::Vector2f(startPoint[0], startPoint[1]) + zoomVector);
+                            FractalHelper<fractalType>::setDomain(fractal, sf::Vector2f(startPoint[0], startPoint[1]) + zoomVector);
                             reupdate = true;
                         }
                     }
                     if(dragging) {
                         dragging = false;
-                        Domain oldDomain = fractal.getDomain();
-                        sf::Vector2f displacement = toFractalCoord(sf::Vector2f(startPoint[0], startPoint[1]), oldDomain) - toFractalCoord(sf::Vector2f(sf::Mouse::getPosition(window)), oldDomain);
-                        fractal.setDomain(Domain(oldDomain.minX + displacement.x, oldDomain.maxX + displacement.x, oldDomain.minY + displacement.y, oldDomain.maxY + displacement.y));
+                        Domain<fractalType> oldDomain = fractal.getDomain();
+                        sf::Vector2<fractalType> displacement = FractalHelper<fractalType>::toFractalCoord(sf::Vector2f(startPoint[0], startPoint[1]), oldDomain) - FractalHelper<fractalType>::toFractalCoord(sf::Vector2f(sf::Mouse::getPosition(window)), oldDomain);
+                        fractal.setDomain(Domain<fractalType>(oldDomain.minX + displacement.x, oldDomain.maxX + displacement.x, oldDomain.minY + displacement.y, oldDomain.maxY + displacement.y));
                         reupdate = true;
                     }
                 }
@@ -183,7 +188,7 @@ int main() {
             processTimeText << (fractalGen.getLastExecutionTime() / 1000.0f) << "ms";
             processTimeInd.setString(processTimeText.str());
 
-            convertFractalData(fractal, result);
+            FractalHelper<fractalType>::convertFractalData(fractal, result);
             fractalResult.update(result);
             fractalSurface.setTexture(fractalResult);
             fractalSurface.setPosition(0.0f, 0.0f);

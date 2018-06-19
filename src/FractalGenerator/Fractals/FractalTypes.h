@@ -7,7 +7,8 @@
 namespace FractalTypes {
     const unsigned short FRACTAL_MANDELBROT = 0;
 
-    FractalType* getFractalTypeObject(unsigned short fractalType);
+    template <class PreciseFloat>
+    FractalType<PreciseFloat>* getFractalTypeObject(unsigned short fractalType);
 }
 
 #endif

@@ -17,14 +17,15 @@
 //namespace mp = boost::multiprecision;
 //typedef
 
+template <class PreciseFloat>
 struct Domain {
-    float minX = -2.0f;
-    float maxX = 2.0f;
-    float minY = -2.0f;
-    float maxY = 2.0f;
+    PreciseFloat minX = -2.0f;
+    PreciseFloat maxX = 2.0f;
+    PreciseFloat minY = -2.0f;
+    PreciseFloat maxY = 2.0f;
 
     Domain() {};
-    Domain(float _minX, float _maxX, float _minY, float _maxY) {
+    Domain(PreciseFloat _minX, PreciseFloat _maxX, PreciseFloat _minY, PreciseFloat _maxY) {
         minX = _minX;
         maxX = _maxX;
         minY = _minY;
@@ -32,25 +33,26 @@ struct Domain {
     }
 };
 
+template <class PreciseFloat>
 class Fractal {
 private:
     unsigned short m_height = DEFAULT_FRACTAL_HEIGHT;
     unsigned short m_width = DEfAULT_FRACTAL_WIDTH;
     unsigned int *m_fractal;
 
-    unsigned int m_maxIterations = 100;
+    unsigned int m_maxIterations = 1000;
 
-    Domain m_domain;
+    Domain<PreciseFloat> m_domain;
 public:
     int getHeight() {return m_height; }
     int getWidth() { return m_width; }
 
     void setElement(unsigned int elementValue, unsigned short x, unsigned short y);
-    float getDomainWidth();
-    float getDomainHeight();
-    Domain getDomain();
-    void setDomain(Domain newDomain);
-    void setDomain(float minX, float maxX, float minY, float maxY);
+    PreciseFloat getDomainWidth();
+    PreciseFloat getDomainHeight();
+    Domain<PreciseFloat> getDomain();
+    void setDomain(Domain<PreciseFloat> newDomain);
+    void setDomain(PreciseFloat minX, PreciseFloat maxX, PreciseFloat minY, PreciseFloat maxY);
 
     void setMaxIterations(unsigned int maxIterations) { m_maxIterations = maxIterations; }
     unsigned int getMaxIterations() { return m_maxIterations; }
