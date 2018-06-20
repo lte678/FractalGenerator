@@ -40,7 +40,7 @@ private:
     unsigned short m_width = DEfAULT_FRACTAL_WIDTH;
     unsigned int *m_fractal;
 
-    unsigned int m_maxIterations = 1000;
+    unsigned int m_maxIterations = 2500;
 
     Domain<PreciseFloat> m_domain;
 public:

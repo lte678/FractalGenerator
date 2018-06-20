@@ -28,10 +28,17 @@ class FractalHelper {
 public:
     static void convertFractalData(Fractal<PreciseFloat> &fractalData, uint8_t *result) {
         for(int i = 0; i < fractalData.getHeight() * fractalData.getWidth(); i++) {
-            uint8_t value = (uint8_t)(255-((float)fractalData.getFractal()[i] * (255.0f / (float)fractalData.getMaxIterations())));
-            result[i*4 + 0] = value;
-            result[i*4 + 1] = value;
-            result[i*4 + 2] = value;
+            //uint8_t value = (uint8_t)(255-((float)fractalData.getFractal()[i] * (255.0f / (float)fractalData.getMaxIterations())));
+            int iterations = fractalData.getFractal()[i];
+            if(iterations != fractalData.getMaxIterations()) {
+                result[i*4 + 0] = (uint8_t)(sin((float)iterations * 0.0005f) * 80.0f + 85.0f);
+                result[i*4 + 1] = (uint8_t)(sin((float)iterations * 0.045f + 3.0f) * 100.0f + 155.0f);
+                result[i*4 + 2] = (uint8_t)(sin((float)iterations * 0.1f + 1.0f) * 100.0f + 155.0f);
+            } else {
+                result[i*4 + 0] = 0;
+                result[i*4 + 1] = 0;
+                result[i*4 + 2] = 0;
+            }
             result[i*4 + 3] = 255;
         }
     }
